@@ -1080,7 +1080,7 @@ $.setState = function( state ) {
 		$.buttons.push( menuButton );
 	}
 
-	if( state == 'credits' ) {
+	if( state == '' ) {
 		$.mouse.down = 0;
 
 		var js13kButton = new $.Button( {
@@ -1091,7 +1091,7 @@ $.setState = function( state ) {
 			scale: 3,
 			title: 'JS13KGAMES',
 			action: function() {
-				location.href = 'http://js13kgames.com';
+				location.href = 'http://aliasad.xyz';
 				$.mouse.down = 0;
 			}
 		} );
@@ -1227,7 +1227,7 @@ $.setupStates = function() {
 			ctx: $.ctxmg,
 			x: $.cw / 2,
 			y: $.ch - 172,
-			text: 'CREATED BY JACK RUGILE FOR JS13KGAMES 2013',
+			text: 'CREATED BY ASAD IN 2019',
 			hspacing: 1,
 			vspacing: 1,
 			halign: 'center',
