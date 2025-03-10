@@ -534,11 +534,13 @@ href="#"
         form.querySelector('.sent-message').style.display = 'block';
         form.reset();
       } else {
-        form.querySelector('.sent-message').style.display = 'block';
+        form.querySelector('.loading').style.display = 'none';
+        form.reset();
       }
     })
     .catch(error => {
-      form.querySelector('.sent-message').style.display = 'block';
+       form.querySelector('.loading').style.display = 'none';
+       form.reset();
     });
   });
 </script>
