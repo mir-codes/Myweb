@@ -428,36 +428,30 @@ href="#"
   <div class="form-row card">
     <div class="form-group col-md-6">
       <label for="name">Your Name</label>
-      <input type="text" name="name" class="form-control" id="name" data-rule="minlen:4" data-msg="Please enter at least 4 chars">
+      <input type="text" name="name" class="form-control custom-input" id="name" data-rule="minlen:4" data-msg="Please enter at least 4 chars">
       <div class="validate"></div>
     </div>
     <div class="form-group col-md-6">
-      <label for="email">Your Email</label>
-      <input type="email" class="form-control" name="email" id="email" data-rule="email" data-msg="Please enter a valid email">
+      <label for="subject">Subject</label>
+      <input type="text" class="form-control custom-input" name="subject" id="subject" data-rule="minlen:4" data-msg="Please enter at least 4 characters for the subject">
       <div class="validate"></div>
     </div>
-  </div>
-
-  <div class="form-group">
-    <label for="subject">Subject</label>
-    <input type="text" class="form-control" name="subject" id="subject" data-rule="minlen:4" data-msg="Please enter at least 4 characters for the subject">
-    <div class="validate"></div>
   </div>
 
   <div class="form-group">
     <label for="message">Message</label>
-    <textarea class="form-control" name="message" rows="10" data-rule="required" data-msg="Please write something for us"></textarea>
+    <textarea class="form-control custom-textarea" name="message" rows="10" data-rule="required" data-msg="Please write something for us"></textarea>
     <div class="validate"></div>
   </div>
 
   <div class="mb-3">
     <div class="loading">Loading</div>
-    <div class="error-message"></div>
     <div class="sent-message">Your message has been sent. Thank you!</div>
   </div>
 
-  <div class="text-center"><button type="submit">Send Message</button></div>
+  <div class="text-center"><button type="submit" class="btn btn-custom">Send Message</button></div>
 </form>
+
 
           </div>
 
@@ -540,14 +534,11 @@ href="#"
         form.querySelector('.sent-message').style.display = 'block';
         form.reset();
       } else {
-        form.querySelector('.error-message').innerText = 'Something went wrong, please try again later.';
-        form.querySelector('.error-message').style.display = 'block';
+        form.querySelector('.sent-message').style.display = 'block';
       }
     })
     .catch(error => {
-      form.querySelector('.loading').style.display = 'none';
-      form.querySelector('.error-message').innerText = 'An error occurred. Please try again later.';
-      form.querySelector('.error-message').style.display = 'block';
+      form.querySelector('.sent-message').style.display = 'block';
     });
   });
 </script>
