@@ -646,13 +646,14 @@ section {
 }
 
 .testimonials .testimonial-item .testimonial-img {
-    width: 232px; /* Your specified width */
-    height: 337px; /* Your specified height */
-    object-fit: cover; /* Maintain the aspect ratio and crop */
+    width: 232px;
+    height: 337px;
+    object-fit: cover;
     margin: 0 auto;
-    border: 3px  solid transparent; /* Initially transparent border */
+    border: 3px solid #d70606;
+    border-radius: 5%;
     border-color: #31afdd;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; /* Smooth transitions for transform, shadow, and border */
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 
