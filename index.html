@@ -519,6 +519,39 @@ href="#"
             document.getElementById('age').textContent = age;
         });
     </script>
+  <script>
+  document.querySelector('.php-email-form').addEventListener('submit', function (e) {
+    e.preventDefault(); // Prevent the default form submission
+
+    let form = this;
+    let formData = new FormData(form);
+
+    // Show loading message
+    form.querySelector('.loading').style.display = 'block';
+
+    fetch(form.action, {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      form.querySelector('.loading').style.display = 'none';
+      if (data.ok) {
+        form.querySelector('.sent-message').style.display = 'block';
+        form.reset();
+      } else {
+        form.querySelector('.error-message').innerText = 'Something went wrong, please try again later.';
+        form.querySelector('.error-message').style.display = 'block';
+      }
+    })
+    .catch(error => {
+      form.querySelector('.loading').style.display = 'none';
+      form.querySelector('.error-message').innerText = 'An error occurred. Please try again later.';
+      form.querySelector('.error-message').style.display = 'block';
+    });
+  });
+</script>
+
 </body>
 
 </html>
