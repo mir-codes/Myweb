@@ -656,7 +656,12 @@ section {
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-
+.testimonials .testimonial-item .testimonial-img:hover {
+    transform: scale(1.05); /* Slight zoom effect */
+    box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.7); /* Flashy glowing effect */
+    filter: brightness(1.2) saturate(1.5); /* Increase brightness and saturation for the "shine" */
+    border-color: #f39c12; /* Change the border color on hover */
+}
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .testimonials .testimonial-item .testimonial-img {
