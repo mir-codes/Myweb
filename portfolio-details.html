@@ -4,29 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moon Visibility Checker</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(to top, #020111, #191621); /* Evening sky gradient */
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h2>Moon Visibility Checker</h2>
-    <label id="moonResult">Checking...</label>
+    <div id="info">Fetching moon data...</div>
+    <canvas id="sky"></canvas>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js"></script>
     <script>
-        function checkMoonVisibility(lat, lon, date) {
+        const canvas = document.getElementById("sky");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        function drawStars(count) {
+            for (let i = 0; i < count; i++) {
+                let x = Math.random() * canvas.width;
+                let y = Math.random() * canvas.height;
+                let size = Math.random() * 2;
+                ctx.fillStyle = "white";
+                ctx.globalAlpha = Math.random() * 0.8;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawMoon(phase, visibility) {
+            const moonX = canvas.width * 0.75;
+            const moonY = canvas.height * 0.3;
+            const radius = 50;
+
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = "yellow";
+
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "rgba(0, 0, 0, " + (1 - visibility) + ")";
+            ctx.beginPath();
+            ctx.arc(moonX + phase * 15, moonY, radius + 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function fetchMoonVisibility(lat, lon) {
+            let date = new Date();
             const times = SunCalc.getTimes(date, lat, lon);
             const moon = SunCalc.getMoonIllumination(date);
             const moonPosition = SunCalc.getMoonPosition(times.sunset, lat, lon);
 
-            let result = "Moon not visible";
+            let visibility = moon.fraction;  // 0 to 1 (0% to 100%)
+            let phase = moon.phase; // 0 (new moon) to 1 (full moon)
 
-            if (moonPosition.altitude > 0 && moon.fraction > 0.01) { 
-                result = "Moon is likely visible";
-            }
+            let result = `Moon Visibility: ${(visibility * 100).toFixed(1)}%`;
+            if (moonPosition.altitude < 0) result += " (Moon Below Horizon)";
+            document.getElementById("info").innerText = result;
 
-            document.getElementById("moonResult").innerText = result;
+            drawStars(100);
+            drawMoon(phase, visibility);
         }
 
-        // Example for Cuttack, India
-        checkMoonVisibility(20.4625, 85.8828, new Date());
+        // Example: Saudi Arabia (24.7136, 46.6753) or Cuttack, India (20.4625, 85.8828)
+        fetchMoonVisibility(24.7136, 46.6753);
     </script>
 </body>
 </html>
