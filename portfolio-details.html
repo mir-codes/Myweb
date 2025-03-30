@@ -40,6 +40,11 @@
             background-color: white;
             border-radius: 50%;
             opacity: 0.8;
+            animation: twinkle 2s infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
         }
         .visibility-label {
             background: rgba(255, 255, 255, 0.2);
@@ -64,7 +69,7 @@
                 star.className = 'star';
                 star.style.left = `${Math.random() * 100}vw`;
                 star.style.top = `${Math.random() * 100}vh`;
-                star.style.animation = `blink ${Math.random() * 3 + 2}s infinite alternate`;
+                star.style.animationDuration = `${Math.random() * 3 + 2}s`;
                 starsContainer.appendChild(star);
             }
         }
