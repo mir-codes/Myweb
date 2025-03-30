@@ -82,7 +82,8 @@
     <div class="visibility-label">Moon Visibility: <span id="visibility">0%</span></div>
 
     <script>
-        let selectedDate = new Date(2025, 4, 10); // March 29, 2025
+        let selectedDate = new Date(2025, 4, 10); 
+        //let selectedDate = new Date(); 
         let locationCoordinates = {
             "Saudi Arabia": { lat: 23.8859, lon: 45.0792 },
             "India": { lat: 20.5937, lon: 78.9629 },
@@ -105,9 +106,11 @@
         generateStars(100);
         
         function updateMoon(visibility) {
-            document.getElementById('visibility').innerText = visibility + '%';
-            gsap.to('.moon', {scale: 1 + visibility / 100, duration: 1, ease: "power2.out"});
-        }
+    document.getElementById('visibility').innerText = visibility + '%';
+    const moonElement = document.querySelector('.moon');
+    moonElement.style.transform = `scale(${1 + visibility / 100})`; // Adjusts the moon's size
+}
+
         
         function calculateMoonVisibility(location, date) {
             let lat = locationCoordinates[location].lat;
