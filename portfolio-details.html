@@ -68,8 +68,10 @@
 </head>
 <body>
     <select class="location-selector" id="location">
-        <option value="India">India</option>
         <option value="Saudi Arabia">Saudi Arabia</option>
+        <option value="India">India</option>
+        <option value="UK">UK</option>
+        <option value="Australia">Australia</option>
     </select>
     <div class="pagination-buttons">
         <button onclick="changeDate(-1)">Previous Day</button>
@@ -80,7 +82,13 @@
     <div class="visibility-label">Moon Visibility: <span id="visibility">0%</span></div>
 
     <script>
-        let selectedDate = new Date();
+        let selectedDate = new Date(2025, 2, 29); // March 29, 2025
+        let locationCoordinates = {
+            "Saudi Arabia": { lat: 23.8859, lon: 45.0792 },
+            "India": { lat: 20.5937, lon: 78.9629 },
+            "UK": { lat: 51.5074, lon: -0.1278 },
+            "Australia": { lat: -25.2744, lon: 133.7751 }
+        };
 
         function generateStars(count) {
             const starsContainer = document.querySelector('.stars');
@@ -101,10 +109,30 @@
         }
         
         function calculateMoonVisibility(location, date) {
-            let lat = location === "India" ? 20.5937 : 23.8859;
-            let lon = location === "India" ? 78.9629 : 45.0792;
+            let lat = locationCoordinates[location].lat;
+            let lon = locationCoordinates[location].lon;
             let moonIllumination = SunCalc.getMoonIllumination(date).fraction * 100;
             updateMoon(moonIllumination.toFixed(1));
+
+             // Scientific Analysis
+            let moonData = SunCalc.getMoonPosition(date, lat, lon);
+            let moonAgeHours = (date - SunCalc.getMoonIllumination(new Date(date.getFullYear(), date.getMonth(), date.getDate()-1)).phaseDate) / (1000 * 60 * 60);
+            let moonAltitudeDegrees = moonData.altitude * (180 / Math.PI);
+
+            console.log(`Location: ${location}, Date: ${date}`);
+            console.log(`Moon Age: ${moonAgeHours.toFixed(2)} hours`);
+            console.log(`Moon Illumination: ${moonIllumination.toFixed(2)}%`);
+            console.log(`Moon Altitude: ${moonAltitudeDegrees.toFixed(2)} degrees`);
+
+            if (location === "Saudi Arabia" && date.getDate() === 29 && date.getMonth() === 2) {
+                console.log("Saudi Arabia March 29th Analysis:");
+                if (moonAgeHours < 5 || moonIllumination < 0.3 || moonAltitudeDegrees < 5) {
+                    console.log("    Astronomical calculations suggest visibility was highly unlikely.");
+                } else {
+                    console.log("    Visibility was possible under ideal conditions.");
+                }
+            }
+
         }
         
         document.getElementById('location').addEventListener('change', function() {
