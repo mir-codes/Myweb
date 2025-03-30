@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moon Visibility Animation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js"></script>
     <style>
@@ -17,125 +18,125 @@
             justify-content: center;
             flex-direction: column;
             position: relative;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .moon-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
         }
         .moon {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background-color: black;
-            position: relative;
-            overflow: hidden;
-        }
-        .moon-phase {
-            position: absolute;
-            width: 200%;
-            height: 100%;
-            background: linear-gradient(to right, black 50%, white 50%);
-            left: -50%;
-        }
-        .stars {
-            position: absolute;
             width: 100%;
             height: 100%;
-            top: 0;
-            left: 0;
-        }
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background-color: white;
             border-radius: 50%;
-            opacity: 0.8;
+            background-color: white;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.8);
+            position: absolute;
+        }
+        .moon-shadow {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: absolute;
+            background-color: black;
+            transition: all 1s ease-in-out;
         }
         .visibility-label {
             background: rgba(255, 255, 255, 0.2);
-            color: white;
             padding: 10px 20px;
             border-radius: 8px;
             font-size: 18px;
             margin-top: 20px;
+            text-align: center;
         }
-        .location-selector, .pagination-buttons {
-            position: absolute;
-            top: 10px;
+        .console-log {
+            background: rgba(0, 0, 0, 0.5);
+            color: #0f0;
+            font-family: monospace;
             padding: 10px;
-            font-size: 16px;
-            background: white;
+            width: 90%;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
             border-radius: 5px;
         }
-        .location-selector { left: 10px; }
-        .pagination-buttons { right: 10px; display: flex; gap: 10px; }
     </style>
 </head>
 <body>
     <select class="location-selector" id="location">
-        <option value="Saudi Arabia">Saudi Arabia</option>
-        <option value="India">India</option>
-        <option value="UK">UK</option>
-        <option value="Australia">Australia</option>
+        
+      <option value="India">India</option>
     </select>
     <div class="pagination-buttons">
         <button onclick="changeDate(-1)">Previous Day</button>
         <button onclick="changeDate(1)">Next Day</button>
     </div>
-    <div class="stars"></div>
-    <div class="moon"><div class="moon-phase"></div></div>
-    <div class="visibility-label">Moon Visibility: <span id="visibility">0%</span></div>
-
+    <div class="moon-container">
+        <div class="moon"></div>
+        <div class="moon-shadow"></div>
+    </div>
+    <div class="visibility-label" id="moon-info"></div>
+    <div class="console-log" id="console-log"></div>
     <script>
         let selectedDate = new Date();
-        let locationCoordinates = {
-            "Saudi Arabia": { lat: 23.8859, lon: 45.0792 },
-            "India": { lat: 20.5937, lon: 78.9629 },
-            "UK": { lat: 51.5074, lon: -0.1278 },
-            "Australia": { lat: -25.2744, lon: 133.7751 }
-        };
+        let locationCoordinates = { "India": { lat: 20.4625, lon: 85.8830 } };
         let selectedLocation = document.getElementById('location').value;
 
-        function generateStars(count) {
-            const starsContainer = document.querySelector('.stars');
-            for (let i = 0; i < count; i++) {
-                let star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = `${Math.random() * 100}vw`;
-                star.style.top = `${Math.random() * 100}vh`;
-                star.style.animationDuration = `${Math.random() * 3 + 2}s`;
-                starsContainer.appendChild(star);
-            }
+        function logToConsole(message) {
+            let consoleDiv = document.getElementById("console-log");
+            consoleDiv.innerHTML += `<p>${message}</p>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
         }
-        generateStars(100);
 
         function updateMoon(illumination) {
-            document.getElementById('visibility').innerText = illumination.toFixed(1) + '%';
-            const moonPhaseElement = document.querySelector('.moon-phase');
-            let phaseOffset = illumination * 2 - 100; // Map illumination to phase offset
-            moonPhaseElement.style.left = `${-50 + phaseOffset / 2}%`; // Adjust the left position
+            const moonShadow = document.querySelector('.moon-shadow');
+            moonShadow.style.width = `${100 - illumination}%`;
+            moonShadow.style.left = illumination < 50 ? "0" : "50%";
         }
-        
+
         function calculateMoonVisibility(location, date) {
-            let lat = locationCoordinates[location].lat;
-            let lon = locationCoordinates[location].lon;
+            let { lat, lon } = locationCoordinates[location];
             let moonIllumination = SunCalc.getMoonIllumination(date).fraction * 100;
-            updateMoon(moonIllumination);
+            let moonPhase = SunCalc.getMoonIllumination(date).phase;
+            let moonAgeDays = moonPhase * 29.53;
+            let moonAgeHours = moonAgeDays * 24;
+            let moonData = SunCalc.getMoonPosition(date, lat, lon);
+            let moonAltitudeDegrees = moonData.altitude * (180 / Math.PI);
+
+            updateMoon(moonIllumination.toFixed(1));
+
+            displayMoonDetails(
+                date.toDateString(),
+                moonIllumination.toFixed(2),
+                moonAgeHours.toFixed(2),
+                moonAltitudeDegrees.toFixed(2)
+            );
+
+            logToConsole(`Date: ${date.toDateString()}, Moon Age: ${moonAgeHours.toFixed(2)} hours, Illumination: ${moonIllumination.toFixed(2)}%, Altitude: ${moonAltitudeDegrees.toFixed(2)}°`);
         }
-        
+
+        function displayMoonDetails(date, illumination, ageHours, altitude) {
+            document.getElementById("moon-info").innerHTML = `
+                <p>Date: ${date}</p>
+                <p>Moon Age: ${ageHours} hours</p>
+                <p>Moon Illumination: ${illumination}%</p>
+                <p>Moon Altitude: ${altitude}°</p>
+            `;
+        }
+
         document.getElementById('location').addEventListener('change', function() {
             selectedLocation = this.value;
             calculateMoonVisibility(selectedLocation, selectedDate);
         });
 
-        function refreshMoonData() {
-            calculateMoonVisibility(selectedLocation, selectedDate);
-        }
-        
         function changeDate(days) {
             selectedDate.setDate(selectedDate.getDate() + days);
-            refreshMoonData();
+            calculateMoonVisibility(selectedLocation, selectedDate);
         }
 
-        setInterval(refreshMoonData, 3600000); // Update hourly
-        refreshMoonData();
+        setInterval(() => calculateMoonVisibility(selectedLocation, selectedDate), 3600000);
+        calculateMoonVisibility(selectedLocation, selectedDate);
     </script>
 </body>
 </html>
