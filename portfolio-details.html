@@ -54,14 +54,34 @@
             font-size: 18px;
             margin-top: 20px;
         }
+        .location-selector, .pagination-buttons {
+            position: absolute;
+            top: 10px;
+            padding: 10px;
+            font-size: 16px;
+            background: white;
+            border-radius: 5px;
+        }
+        .location-selector { left: 10px; }
+        .pagination-buttons { right: 10px; display: flex; gap: 10px; }
     </style>
 </head>
 <body>
+    <select class="location-selector" id="location">
+        <option value="India">India</option>
+        <option value="Saudi Arabia">Saudi Arabia</option>
+    </select>
+    <div class="pagination-buttons">
+        <button onclick="changeDate(-1)">Previous Day</button>
+        <button onclick="changeDate(1)">Next Day</button>
+    </div>
     <div class="stars"></div>
     <div class="moon"></div>
     <div class="visibility-label">Moon Visibility: <span id="visibility">0%</span></div>
 
     <script>
+        let selectedDate = new Date();
+
         function generateStars(count) {
             const starsContainer = document.querySelector('.stars');
             for (let i = 0; i < count; i++) {
@@ -80,12 +100,29 @@
             gsap.to('.moon', {scale: 1 + visibility / 100, duration: 1, ease: "power2.out"});
         }
         
-        function calculateMoonVisibility() {
-            let now = new Date();
-            let moonIllumination = SunCalc.getMoonIllumination(now).fraction * 100;
+        function calculateMoonVisibility(location, date) {
+            let lat = location === "India" ? 20.5937 : 23.8859;
+            let lon = location === "India" ? 78.9629 : 45.0792;
+            let moonIllumination = SunCalc.getMoonIllumination(date).fraction * 100;
             updateMoon(moonIllumination.toFixed(1));
         }
-        calculateMoonVisibility();
+        
+        document.getElementById('location').addEventListener('change', function() {
+            calculateMoonVisibility(this.value, selectedDate);
+        });
+
+        function refreshMoonData() {
+            let selectedLocation = document.getElementById('location').value;
+            calculateMoonVisibility(selectedLocation, selectedDate);
+        }
+        
+        function changeDate(days) {
+            selectedDate.setDate(selectedDate.getDate() + days);
+            refreshMoonData();
+        }
+
+        setInterval(refreshMoonData, 3600000); // Update hourly
+        refreshMoonData();
     </script>
 </body>
 </html>
