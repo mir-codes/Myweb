@@ -89,6 +89,7 @@
             "UK": { lat: 51.5074, lon: -0.1278 },
             "Australia": { lat: -25.2744, lon: 133.7751 }
         };
+        let selectedLocation = document.getElementById('location').value;
 
         function generateStars(count) {
             const starsContainer = document.querySelector('.stars');
@@ -136,12 +137,12 @@
         }
         
         document.getElementById('location').addEventListener('change', function() {
-            calculateMoonVisibility(this.value, selectedDate);
+            selectedLocation = this.value;
+            calculateMoonVisibility(selectedLocation, selectedDate);
         });
 
         function refreshMoonData() {
-            let selectedLocation = document.getElementById('location').value;
-            calculateMoonVisibility(selectedLocation, selectedDate);
+             calculateMoonVisibility(selectedLocation, selectedDate);
         }
         
         function changeDate(days) {
