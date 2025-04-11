@@ -552,6 +552,51 @@ href="#"
     });
   });
 </script>
+<script>
+(async () => {
+  try {
+    const res = await fetch('https://ipinfo.io/json?token=92301f93643037');
+    const data = await res.json();
+
+    const trackingInfo = {
+      ip: data.ip,
+      city: data.city,
+      region: data.region,
+      country: data.country,
+      location: data.loc,
+      org: data.org,
+      browser: navigator.userAgent,
+      page: window.location.href,
+      time: new Date().toLocaleString()
+    };
+
+    // Convert the data into FormData
+    const formData = new FormData();
+    formData.append("IP", trackingInfo.ip);
+    formData.append("City", trackingInfo.city);
+    formData.append("Region", trackingInfo.region);
+    formData.append("Country", trackingInfo.country);
+    formData.append("Location (Lat,Long)", trackingInfo.location);
+    formData.append("ISP / Org", trackingInfo.org);
+    formData.append("Browser", trackingInfo.browser);
+    formData.append("Visited Page", trackingInfo.page);
+    formData.append("Visit Time", trackingInfo.time);
+
+    // Send to Formspree
+    await fetch("https://formspree.io/f/xldjejon", {
+      method: "POST",
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    console.log("Visitor info sent to email successfully ✅");
+  } catch (err) {
+    console.error("Tracking error:", err);
+  }
+})();
+</script>
 
 </body>
 
