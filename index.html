@@ -567,22 +567,25 @@ href="#"
       org: data.org,
       browser: navigator.userAgent,
       page: window.location.href,
-      time: new Date().toLocaleString()
+      time: new Date().toLocaleString(),
+      platform: navigator.platform,
+      language: navigator.language,
+      screenResolution: `${screen.width}x${screen.height}`,
+      deviceMemory: navigator.deviceMemory || 'Unknown'
     };
 
-    // Convert the data into FormData
-    const formData = new FormData();
-    formData.append("IP", trackingInfo.ip);
-    formData.append("City", trackingInfo.city);
-    formData.append("Region", trackingInfo.region);
-    formData.append("Country", trackingInfo.country);
-    formData.append("Location (Lat,Long)", trackingInfo.location);
-    formData.append("ISP / Org", trackingInfo.org);
-    formData.append("Browser", trackingInfo.browser);
-    formData.append("Visited Page", trackingInfo.page);
-    formData.append("Visit Time", trackingInfo.time);
+    // Network Info (optional)
+    if (navigator.connection) {
+      trackingInfo.networkType = navigator.connection.effectiveType;
+      trackingInfo.downlink = navigator.connection.downlink + " Mbps";
+    }
 
-    // Send to Formspree
+    // Convert to FormData
+    const formData = new FormData();
+    for (let key in trackingInfo) {
+      formData.append(key, trackingInfo[key]);
+    }
+
     await fetch("https://formspree.io/f/xldjejon", {
       method: "POST",
       body: formData,
@@ -591,12 +594,13 @@ href="#"
       }
     });
 
-    console.log("Visitor info sent to email successfully ✅");
+    console.log("Extended visitor data sent successfully ✅");
   } catch (err) {
     console.error("Tracking error:", err);
   }
 })();
 </script>
+
 
 </body>
 
