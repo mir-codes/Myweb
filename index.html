@@ -553,55 +553,95 @@ href="#"
   });
 </script>
 <script>
-(async () => {
-  try {
-    const res = await fetch('https://ipinfo.io/json?token=92301f93643037');
-    const data = await res.json();
+document.getElementById("allow-location").onclick = () => {
+  document.getElementById("location-consent-box").style.display = "none";
+  getExactLocation(true);
+};
 
-    const trackingInfo = {
-      ip: data.ip,
-      city: data.city,
-      region: data.region,
-      country: data.country,
-      location: data.loc,
-      org: data.org,
-      browser: navigator.userAgent,
-      page: window.location.href,
-      time: new Date().toLocaleString(),
-      platform: navigator.platform,
-      language: navigator.language,
-      screenResolution: `${screen.width}x${screen.height}`,
-      deviceMemory: navigator.deviceMemory || 'Unknown'
-    };
+document.getElementById("deny-location").onclick = () => {
+  document.getElementById("location-consent-box").style.display = "none";
+  getApproxLocation(false);
+};
 
-    // Network Info (optional)
-    if (navigator.connection) {
-      trackingInfo.networkType = navigator.connection.effectiveType;
-      trackingInfo.downlink = navigator.connection.downlink + " Mbps";
-    }
+async function getExactLocation(userConsented) {
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    const accuracy = pos.coords.accuracy + " meters";
 
-    // Convert to FormData
-    const formData = new FormData();
-    for (let key in trackingInfo) {
-      formData.append(key, trackingInfo[key]);
-    }
+    const trackingInfo = await getDeviceInfo();
+    trackingInfo["Location Type"] = "Exact (GPS)";
+    trackingInfo["Latitude"] = lat;
+    trackingInfo["Longitude"] = lon;
+    trackingInfo["Accuracy"] = accuracy;
+    trackingInfo["User Consent"] = userConsented ? "Yes" : "No";
 
-    await fetch("https://formspree.io/f/xldjejon", {
-      method: "POST",
-      body: formData,
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
+    sendToFormspree(trackingInfo);
+  }, () => {
+    // If user clicks "Yes" but browser blocks, fallback
+    getApproxLocation(false);
+  });
+}
 
-    console.log("Extended visitor data sent successfully ✅");
-  } catch (err) {
-    console.error("Tracking error:", err);
+async function getApproxLocation(userConsented) {
+  const res = await fetch('https://ipinfo.io/json?token=92301f93643037');
+  const data = await res.json();
+
+  const trackingInfo = await getDeviceInfo();
+  trackingInfo["Location Type"] = "Approx (IP)";
+  trackingInfo["IP"] = data.ip;
+  trackingInfo["City"] = data.city;
+  trackingInfo["Region"] = data.region;
+  trackingInfo["Country"] = data.country;
+  trackingInfo["Location (Lat,Long)"] = data.loc;
+  trackingInfo["ISP / Org"] = data.org;
+  trackingInfo["User Consent"] = userConsented ? "Yes" : "No";
+
+  sendToFormspree(trackingInfo);
+}
+
+async function getDeviceInfo() {
+  const info = {
+    browser: navigator.userAgent,
+    page: window.location.href,
+    time: new Date().toLocaleString(),
+    platform: navigator.platform,
+    language: navigator.language,
+    screenResolution: `${screen.width}x${screen.height}`,
+    deviceMemory: navigator.deviceMemory || 'Unknown'
+  };
+
+  if (navigator.connection) {
+    info["Network Type"] = navigator.connection.effectiveType;
+    info["Downlink Speed"] = navigator.connection.downlink + " Mbps";
   }
-})();
+
+  return info;
+}
+
+async function sendToFormspree(data) {
+  const formData = new FormData();
+  for (let key in data) {
+    formData.append(key, data[key]);
+  }
+
+  await fetch("https://formspree.io/f/xldjejon", {
+    method: "POST",
+    body: formData,
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+
+  console.log("Tracking data sent successfully ✅");
+}
 </script>
 
-
+<div id="location-consent-box" style="position:fixed;bottom:20px;left:20px;background:white;padding:15px;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.1);z-index:9999;font-family:sans-serif;">
+  <p>Would you like to share your exact location to get content based on your area?</p>
+  <button id="allow-location">Yes</button>
+  <button id="deny-location">No</button>
+</div>
 </body>
 
 </html>
