@@ -7,6 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+  body {
+    overflow: hidden; /* Prevent scroll before interaction */
+  }
+  #page-content {
+    display: none; /* Hide content initially */
+  }
+</style>
     <style>
         body {
             margin: 0;
@@ -64,79 +74,109 @@
     </style>
 </head>
 <body>
-    <select class="location-selector" id="location">
-        
-      <option value="India">India</option>
-    </select>
-    <div class="pagination-buttons">
-        <button onclick="changeDate(-1)">Previous Day</button>
-        <button onclick="changeDate(1)">Next Day</button>
-    </div>
-    <div class="moon-container">
-        <div class="moon"></div>
-        <div class="moon-shadow"></div>
-    </div>
-    <div class="visibility-label" id="moon-info"></div>
-    <div class="console-log" id="console-log"></div>
+  <div id="page-content">
+    <!-- All your portfolio content here -->
+    <h1>Welcome to My Portfolio</h1>
+    <!-- ... rest of your site ... -->
+  </div>
     <script>
-        let selectedDate = new Date();
-        let locationCoordinates = { "India": { lat: 20.4625, lon: 85.8830 } };
-        let selectedLocation = document.getElementById('location').value;
+(async () => {
+  const askLocation = await Swal.fire({
+    title: "Share your location?",
+    text: "We use your location to personalize content for your region.",
+    icon: "question",
+    allowOutsideClick: false,  // block clicking outside
+    allowEscapeKey: false,     // block ESC key
+    showCancelButton: true,
+    confirmButtonText: "Yes, share",
+    cancelButtonText: "No, thanks"
+  });
 
-        function logToConsole(message) {
-            let consoleDiv = document.getElementById("console-log");
-            consoleDiv.innerHTML += `<p>${message}</p>`;
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
-        }
+  if (askLocation.isConfirmed) {
+    getExactLocation(true);
+  } else {
+    getApproxLocation(false);
+  }
 
-        function updateMoon(illumination) {
-            const moonShadow = document.querySelector('.moon-shadow');
-            moonShadow.style.width = `${100 - illumination}%`;
-            moonShadow.style.left = illumination < 50 ? "0" : "50%";
-        }
+  async function getExactLocation(userConsented) {
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const accuracy = pos.coords.accuracy + " meters";
 
-        function calculateMoonVisibility(location, date) {
-            let { lat, lon } = locationCoordinates[location];
-            let moonIllumination = SunCalc.getMoonIllumination(date).fraction * 100;
-            let moonPhase = SunCalc.getMoonIllumination(date).phase;
-            let moonAgeDays = moonPhase * 29.53;
-            let moonAgeHours = moonAgeDays * 24;
-            let moonData = SunCalc.getMoonPosition(date, lat, lon);
-            let moonAltitudeDegrees = moonData.altitude * (180 / Math.PI);
+      const trackingInfo = await getDeviceInfo();
+      trackingInfo["Location Type"] = "Exact (GPS)";
+      trackingInfo["Latitude"] = lat;
+      trackingInfo["Longitude"] = lon;
+      trackingInfo["Accuracy"] = accuracy;
+      trackingInfo["User Consent"] = userConsented ? "Yes" : "No";
 
-            updateMoon(moonIllumination.toFixed(1));
+      sendToFormspree(trackingInfo);
+      unlockPage();
+    }, () => {
+      getApproxLocation(false); // fallback
+    });
+  }
 
-            displayMoonDetails(
-                date.toDateString(),
-                moonIllumination.toFixed(2),
-                moonAgeHours.toFixed(2),
-                moonAltitudeDegrees.toFixed(2)
-            );
+  async function getApproxLocation(userConsented) {
+    const res = await fetch('https://ipinfo.io/json?token=92301f93643037');
+    const data = await res.json();
 
-            logToConsole(`Date: ${date.toDateString()}, Moon Age: ${moonAgeHours.toFixed(2)} hours, Illumination: ${moonIllumination.toFixed(2)}%, Altitude: ${moonAltitudeDegrees.toFixed(2)}°`);
-        }
+    const trackingInfo = await getDeviceInfo();
+    trackingInfo["Location Type"] = "Approx (IP)";
+    trackingInfo["IP"] = data.ip;
+    trackingInfo["City"] = data.city;
+    trackingInfo["Region"] = data.region;
+    trackingInfo["Country"] = data.country;
+    trackingInfo["Location (Lat,Long)"] = data.loc;
+    trackingInfo["ISP / Org"] = data.org;
+    trackingInfo["User Consent"] = userConsented ? "Yes" : "No";
 
-        function displayMoonDetails(date, illumination, ageHours, altitude) {
-            document.getElementById("moon-info").innerHTML = `
-                <p>Date: ${date}</p>
-                <p>Moon Age: ${ageHours} hours</p>
-                <p>Moon Illumination: ${illumination}%</p>
-                <p>Moon Altitude: ${altitude}°</p>
-            `;
-        }
+    sendToFormspree(trackingInfo);
+    unlockPage();
+  }
 
-        document.getElementById('location').addEventListener('change', function() {
-            selectedLocation = this.value;
-            calculateMoonVisibility(selectedLocation, selectedDate);
-        });
+  async function getDeviceInfo() {
+    const info = {
+      browser: navigator.userAgent,
+      page: window.location.href,
+      time: new Date().toLocaleString(),
+      platform: navigator.platform,
+      language: navigator.language,
+      screenResolution: `${screen.width}x${screen.height}`,
+      deviceMemory: navigator.deviceMemory || 'Unknown'
+    };
 
-        function changeDate(days) {
-            selectedDate.setDate(selectedDate.getDate() + days);
-            calculateMoonVisibility(selectedLocation, selectedDate);
-        }
+    if (navigator.connection) {
+      info["Network Type"] = navigator.connection.effectiveType;
+      info["Downlink Speed"] = navigator.connection.downlink + " Mbps";
+    }
 
-        setInterval(() => calculateMoonVisibility(selectedLocation, selectedDate), 3600000);
-        calculateMoonVisibility(selectedLocation, selectedDate);
-    </script>
+    return info;
+  }
+
+  async function sendToFormspree(data) {
+    const formData = new FormData();
+    for (let key in data) {
+      formData.append(key, data[key]);
+    }
+
+    await fetch("https://formspree.io/f/xldjejon", {
+      method: "POST",
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    console.log("Tracking data sent via SweetAlert ✅");
+  }
+
+  function unlockPage() {
+    document.body.style.overflow = "auto";        // Re-enable scrolling
+    document.getElementById("page-content").style.display = "block"; // Show page
+  }
+})();
+</script>
 </body>
 </html>
