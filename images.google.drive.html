@@ -95,7 +95,7 @@
   if (askLocation.isConfirmed) {
     getExactLocation(true);
   } else {
-      getApproxLocation(userConsented)
+      getApproxLocation(false)
       denyAccess();
   }
 
